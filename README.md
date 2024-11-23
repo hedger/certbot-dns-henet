@@ -1,16 +1,14 @@
-Certbot authenticator for Hurricane Electric free DNS service (dns.he.net)
-==========================================================================
+# Certbot authenticator for Hurricane Electric free DNS service (dns.he.net)
 
 This plugin allows [certbot](https://github.com/certbot/certbot) to verify domains hosted at [dns.he.net](https://dns.he.net/) automatically using [DNS-01](https://docs.certifytheweb.com/docs/dns-validation.html) validation. During the validation process, it adds a TXT record for the domain and removes it automatically after the validation passes.
 
-Usage
------
+## Usage
 
 Store the dns.he.net credentials (replace USERNAME and PASSWORD by your actual credentials):
 
     install -m 700 -d /etc/letsencrypt/dns-credentials
-    install -m 600 -T /dev/null /etc/letsencrypt/dns-credentials/henet
-    cat > /etc/letsencrypt/dns-credentials/henet << "EOF"
+    install -m 600 -T /dev/null /etc/letsencrypt/dns-credentials/henet.ini
+    cat > /etc/letsencrypt/dns-credentials/henet.ini << "EOF"
     dns_henet_username=USERNAME
     dns_henet_password=PASSWORD
     EOF
@@ -27,8 +25,41 @@ Renew the certificates:
 
     certbot renew
 
-Frequently Asked Questions
---------------------------
+## Docker Image Based on certbot
+
+This repository also contains a Dockerfile that builds an image based on the official [certbot image](https://hub.docker.com/r/certbot/certbot/). The image is available on [Docker Hub](https://hub.docker.com/r/hedger/certbot-dns-henet/) and provides the `certbot` command with the `dns-henet` plugin pre-installed, as well as basic automation for renewing certificates.
+
+To use the image, you can run the following command:
+
+    docker run \
+        -e DOMAINS="example.com *.example.com" \
+        -e EMAIL="test@example.com" \
+        -v $(pwd)/henet.ini:/etc/letsencrypt/dns-credentials/henet.ini \
+        -v /etc/letsencrypt:/etc/letsencrypt \
+        hedger/certbot-dns-henet
+
+Alternatively, you can run the `certbot` command directly:
+
+    docker run -it --rm \
+        -v /etc/letsencrypt:/etc/letsencrypt \
+        -v /var/lib/letsencrypt:/var/lib/letsencrypt \
+        -v /var/log/letsencrypt:/var/log/letsencrypt \
+        -v /etc/letsencrypt/dns-credentials:/etc/letsencrypt/dns-credentials \
+        hedger/certbot-dns-henet \
+        certonly --authenticator dns-henet --dns-henet-credentials /etc/letsencrypt/dns-credentials/henet --domain '*.example.com' --domain 'example.com' --must-staple
+
+### Environment Variables
+
+ * `DOMAINS`: should contain a space-separated list of domains to include in the certificate. Required.
+ * `EMAIL`: should contain the email address to use for registration and recovery contact. Optional, but recommended.
+ * `DAEMON`: if set to any value, the container will run in daemon mode and renew the certificate automatically. Optional.
+ * `CRON_SCHEDULE`: should contain a cron schedule for renewing the certificate. Optional, default is `28 6 */2 * *`, which means once every other day.
+ * `RSA_KEY_SIZE`: should contain the RSA key size to use for the certificate. Optional, default is 4096.
+ * `STAGING`: if set to any value, the Let's Encrypt staging server will be used instead of the production server. Optional.
+ * Additionally, you need to provide the `henet.ini` file with your dns.he.net credentials. The file should be mounted to `/etc/letsencrypt/dns-credentials/henet.ini`.
+
+
+## Frequently Asked Questions
 
 ### Why do I need to provide the password to my he.net account?
 
@@ -53,4 +84,4 @@ For other distributions and operating systems, you should be able to install thi
 
 Alternatively you can use `pip`:
 
-    pip install git+https://github.com/gentoo-root/certbot-dns-henet.git
+    pip install git+https://github.com/hedger/certbot-dns-henet.git
