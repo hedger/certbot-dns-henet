@@ -49,3 +49,8 @@ For other distributions and operating systems, you should be able to install thi
     python setup.py build
     python setup.py test
     python setup.py install
+
+
+Alternatively you can use `pip`:
+
+    pip install git+https://github.com/gentoo-root/certbot-dns-henet.git
