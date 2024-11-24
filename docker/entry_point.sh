@@ -5,12 +5,12 @@ set -euo pipefail
 
 
 check_and_set_env() {
-    RSA_KEY_SIZE=${RSA_KEY_SIZE:-4096}
     STAGING=${STAGING:-}
     DOMAINS=${DOMAINS:-}
     EMAIL=${EMAIL:-}
     CRON_SCHEDULE=${CRON_SCHEDULE:-28 6 */2 * *}
     DAEMON=${DAEMON:-}
+    CREDENTIALS_FILE_NAME=${CREDENTIALS_FILE_NAME:-henet.ini}
 
     STAGING_PARAMETER=""
     if [ -z "$STAGING" ]; then
@@ -22,8 +22,8 @@ check_and_set_env() {
         exit 1
     fi
 
-    if [ ! -e "/etc/letsencrypt/dns-credentials/henet.ini" ]; then
-        echo "Please mount Hurricane Electric DNS credentials to /etc/letsencrypt/dns-credentials/henet.ini"
+    if [ ! -e "/etc/letsencrypt/dns-credentials/${CREDENTIALS_FILE_NAME}" ]; then
+        echo "Please mount Hurricane Electric DNS credentials to /etc/letsencrypt/dns-credentials/${CREDENTIALS_FILE_NAME}"
         echo "See https://github.com/hedger/certbot-dns-henet for more information"
         exit 1
     fi
@@ -58,11 +58,10 @@ else
     certbot certonly \
         --non-interactive \
         -a dns-henet \
-        --dns-henet-credentials /etc/letsencrypt/dns-credentials/henet.ini \
+        --dns-henet-credentials /etc/letsencrypt/dns-credentials/${CREDENTIALS_FILE_NAME} \
         $STAGING_PARAMETER \
         $email_arg \
         $domain_args \
-        --rsa-key-size $RSA_KEY_SIZE \
         --agree-tos \
         --force-renewal
 
@@ -80,6 +79,7 @@ if [ -z "$DAEMON" ]; then
     echo "Exiting because DAEMON is not set"
     exit 0
 fi
+
 
 echo "Running cron job. Effective schedule: $(crontab -l | grep -v '^#')"
 # Run cron in the foreground

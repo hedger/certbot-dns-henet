@@ -6,24 +6,30 @@ This plugin allows [certbot](https://github.com/certbot/certbot) to verify domai
 
 Store the dns.he.net credentials (replace USERNAME and PASSWORD by your actual credentials):
 
-    install -m 700 -d /etc/letsencrypt/dns-credentials
-    install -m 600 -T /dev/null /etc/letsencrypt/dns-credentials/henet.ini
-    cat > /etc/letsencrypt/dns-credentials/henet.ini << "EOF"
-    dns_henet_username=USERNAME
-    dns_henet_password=PASSWORD
-    EOF
+```bash
+install -m 700 -d /etc/letsencrypt/dns-credentials
+install -m 600 -T /dev/null /etc/letsencrypt/dns-credentials/henet.ini
+cat > /etc/letsencrypt/dns-credentials/henet.ini << "EOF"
+dns_henet_username=USERNAME
+dns_henet_password=PASSWORD
+EOF
+```
 
 Generate a new wildcard certificate with [OCSP Must-Staple](https://scotthelme.co.uk/ocsp-must-staple/):
 
-    certbot certonly \
-        --authenticator dns-henet \
-        --dns-henet-credentials /etc/letsencrypt/dns-credentials/henet \
-        --domain '*.example.com' --domain 'example.com' \
-        --must-staple
+```bash
+certbot certonly \
+    --authenticator dns-henet \
+    --dns-henet-credentials /etc/letsencrypt/dns-credentials/henet \
+    --domain '*.example.com' --domain 'example.com' \
+    --must-staple
+```
 
 Renew the certificates:
 
-    certbot renew
+```bash
+certbot renew
+```
 
 ## Docker Image Based on certbot
 
@@ -31,22 +37,29 @@ This repository also contains a Dockerfile that builds an image based on the off
 
 To use the image, you can run the following command:
 
-    docker run \
-        -e DOMAINS="example.com *.example.com" \
-        -e EMAIL="test@example.com" \
-        -v $(pwd)/henet.ini:/etc/letsencrypt/dns-credentials/henet.ini \
-        -v /etc/letsencrypt:/etc/letsencrypt \
-        hedger/certbot-dns-henet
-
+```bash
+docker run \
+    -e DOMAINS="example.com *.example.com" \
+    -e EMAIL="test@example.com" \
+    -v $(pwd)/henet.ini:/etc/letsencrypt/dns-credentials/henet.ini \
+    -v /etc/letsencrypt:/etc/letsencrypt \
+    hedger/certbot-dns-henet
+```
 Alternatively, you can run the `certbot` command directly:
 
-    docker run -it --rm \
-        -v /etc/letsencrypt:/etc/letsencrypt \
-        -v /var/lib/letsencrypt:/var/lib/letsencrypt \
-        -v /var/log/letsencrypt:/var/log/letsencrypt \
-        -v /etc/letsencrypt/dns-credentials:/etc/letsencrypt/dns-credentials \
-        hedger/certbot-dns-henet \
-        certonly --authenticator dns-henet --dns-henet-credentials /etc/letsencrypt/dns-credentials/henet --domain '*.example.com' --domain 'example.com' --must-staple
+```bash
+docker run -it --rm \
+    -v /etc/letsencrypt:/etc/letsencrypt \
+    -v /var/lib/letsencrypt:/var/lib/letsencrypt \
+    -v /var/log/letsencrypt:/var/log/letsencrypt \
+    -v /etc/letsencrypt/dns-credentials:/etc/letsencrypt/dns-credentials \
+    hedger/certbot-dns-henet \
+    certonly \
+    --authenticator dns-henet \
+    --dns-henet-credentials /etc/letsencrypt/dns-credentials/henet.ini \
+    --domain '*.example.com' --domain 'example.com' \
+    --must-staple
+```
 
 ### Environment Variables
 
@@ -54,10 +67,30 @@ Alternatively, you can run the `certbot` command directly:
  * `EMAIL`: should contain the email address to use for registration and recovery contact. Optional, but recommended.
  * `DAEMON`: if set to any value, the container will run in daemon mode and renew the certificate automatically. Optional.
  * `CRON_SCHEDULE`: should contain a cron schedule for renewing the certificate. Optional, default is `28 6 */2 * *`, which means once every other day.
- * `RSA_KEY_SIZE`: should contain the RSA key size to use for the certificate. Optional, default is 4096.
+ * `CREDENTIALS_FILE_NAME`: should contain the name of to the credentials file in the `/etc/letsencrypt/dns-credentials` directory. Optional, default is `henet.ini`.
  * `STAGING`: if set to any value, the Let's Encrypt staging server will be used instead of the production server. Optional.
- * Additionally, you need to provide the `henet.ini` file with your dns.he.net credentials. The file should be mounted to `/etc/letsencrypt/dns-credentials/henet.ini`.
+ 
+ **Additionally, you must provide the `henet.ini` file with your dns.he.net credentials. The file should be mounted to `/etc/letsencrypt/dns-credentials/henet.ini`.**
 
+ ### Liveness Status
+
+Container reports its status using Docker's `HEALTHCHECK` feature. It checks if the certificates are present and no other certbot process is running. That way you can set up container startup order in your orchestration system. For example, in Docker Compose you can use `depends_on`:
+
+```yaml
+services:
+  certbot:
+    image: hedger/certbot-dns-henet
+    environment:
+      - DOMAINS="example.com *.example.com"
+      - EMAIL="example@example.com"
+      - DAEMON=1
+    ...
+  nginx:
+    ...
+    depends_on:
+      certbot:
+        condition: service_healthy
+```
 
 ## Frequently Asked Questions
 
@@ -77,11 +110,15 @@ Alternatively, you can use the PKGBUILD shipped in this repository. Check out [t
 
 For other distributions and operating systems, you should be able to install this plugin using setup.py, just as any Python module. Using the package manager is preferred: many package managers offer some simple mechanism for creating packages based on setup.py. However, if you wish to install it manually (or if you need some reference installations commands for creating a package), run the following commands:
 
-    python setup.py build
-    python setup.py test
-    python setup.py install
 
+```bash
+python setup.py build
+python setup.py test
+python setup.py install
+```
 
 Alternatively you can use `pip`:
 
-    pip install git+https://github.com/hedger/certbot-dns-henet.git
+```bash
+pip install git+https://github.com/hedger/certbot-dns-henet.git
+```
