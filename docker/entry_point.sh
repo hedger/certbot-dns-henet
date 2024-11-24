@@ -10,7 +10,7 @@ check_and_set_env() {
     EMAIL=${EMAIL:-}
     CRON_SCHEDULE=${CRON_SCHEDULE:-28 6 */2 * *}
     DAEMON=${DAEMON:-}
-    CREDENTIALS_FILE_NAME=${CREDENTIALS_FILE_NAME:-henet.ini}
+    CREDENTIALS_FILE=${CREDENTIALS_FILE:-/etc/letsencrypt/dns-credentials/henet.ini}
 
     STAGING_PARAMETER=""
     if [ -z "$STAGING" ]; then
@@ -22,8 +22,8 @@ check_and_set_env() {
         exit 1
     fi
 
-    if [ ! -e "/etc/letsencrypt/dns-credentials/${CREDENTIALS_FILE_NAME}" ]; then
-        echo "Please mount Hurricane Electric DNS credentials to /etc/letsencrypt/dns-credentials/${CREDENTIALS_FILE_NAME}"
+    if [ ! -e "${CREDENTIALS_FILE}" ]; then
+        echo "Please mount Hurricane Electric DNS credentials to ${CREDENTIALS_FILE}"
         echo "See https://github.com/hedger/certbot-dns-henet for more information"
         exit 1
     fi
@@ -58,7 +58,7 @@ else
     certbot certonly \
         --non-interactive \
         -a dns-henet \
-        --dns-henet-credentials /etc/letsencrypt/dns-credentials/${CREDENTIALS_FILE_NAME} \
+        --dns-henet-credentials ${CREDENTIALS_FILE} \
         $STAGING_PARAMETER \
         $email_arg \
         $domain_args \

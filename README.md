@@ -20,7 +20,7 @@ Generate a new wildcard certificate with [OCSP Must-Staple](https://scotthelme.c
 ```bash
 certbot certonly \
     --authenticator dns-henet \
-    --dns-henet-credentials /etc/letsencrypt/dns-credentials/henet \
+    --dns-henet-credentials /etc/letsencrypt/dns-credentials/henet.ini \
     --domain '*.example.com' --domain 'example.com' \
     --must-staple
 ```
@@ -41,7 +41,7 @@ To use the image, you can run the following command:
 docker run \
     -e DOMAINS="example.com *.example.com" \
     -e EMAIL="test@example.com" \
-    -v $(pwd)/henet.ini:/etc/letsencrypt/dns-credentials/henet.ini \
+    -v $(pwd)/henet.ini:/run/dns-credentials/henet.ini \
     -v /etc/letsencrypt:/etc/letsencrypt \
     hedger/certbot-dns-henet
 ```
@@ -52,11 +52,11 @@ docker run -it --rm \
     -v /etc/letsencrypt:/etc/letsencrypt \
     -v /var/lib/letsencrypt:/var/lib/letsencrypt \
     -v /var/log/letsencrypt:/var/log/letsencrypt \
-    -v /etc/letsencrypt/dns-credentials:/etc/letsencrypt/dns-credentials \
+    -v $(pwd)/henet.ini:/run/dns-credentials/henet.ini \
     hedger/certbot-dns-henet \
     certonly \
     --authenticator dns-henet \
-    --dns-henet-credentials /etc/letsencrypt/dns-credentials/henet.ini \
+    --dns-henet-credentials /run/dns-credentials/henet.ini \
     --domain '*.example.com' --domain 'example.com' \
     --must-staple
 ```
@@ -67,10 +67,10 @@ docker run -it --rm \
  * `EMAIL`: should contain the email address to use for registration and recovery contact. Optional, but recommended.
  * `DAEMON`: if set to any value, the container will run in daemon mode and renew the certificate automatically. Optional.
  * `CRON_SCHEDULE`: should contain a cron schedule for renewing the certificate. Optional, default is `28 6 */2 * *`, which means once every other day.
- * `CREDENTIALS_FILE_NAME`: should contain the name of to the credentials file in the `/etc/letsencrypt/dns-credentials` directory. Optional, default is `henet.ini`.
+ * `CREDENTIALS_FILE`: should contain the path to the credentials file in the container. Optional, default is `/run/dns-credentials/henet.ini`.
  * `STAGING`: if set to any value, the Let's Encrypt staging server will be used instead of the production server. Optional.
  
- **Additionally, you must provide the `henet.ini` file with your dns.he.net credentials. The file should be mounted to `/etc/letsencrypt/dns-credentials/henet.ini`.**
+ **Additionally, you must provide the `henet.ini` file with your dns.he.net credentials. The file should be mounted to `$CREDENTIALS_FILE` (`/run/dns-credentials/henet.ini` by default).**
 
  ### Liveness Status
 
@@ -81,15 +81,23 @@ services:
   certbot:
     image: hedger/certbot-dns-henet
     environment:
-      - DOMAINS="example.com *.example.com"
-      - EMAIL="example@example.com"
-      - DAEMON=1
+      DOMAINS: "example.com *.example.com"
+      EMAIL: "example@example.com"
+      DAEMON: 1
+      CREDENTIALS_FILE: /run/secrets/he-auth
+    secrets:
+      - he-auth
     ...
+
   nginx:
     ...
     depends_on:
       certbot:
         condition: service_healthy
+
+secrets:
+  he-auth:
+    file: ./he.ini
 ```
 
 ## Frequently Asked Questions
