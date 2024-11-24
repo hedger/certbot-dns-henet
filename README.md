@@ -35,7 +35,7 @@ certbot renew
 
 This repository also contains a Dockerfile that builds an image based on the official [certbot image](https://hub.docker.com/r/certbot/certbot/). The image is available on [Docker Hub](https://hub.docker.com/r/hedger/certbot-dns-henet/) and provides the `certbot` command with the `dns-henet` plugin pre-installed, as well as basic automation for renewing certificates.
 
-To use the image, you can run the following command:
+To use the image in fully automated mode, run the following command:
 
 ```bash
 docker run \
@@ -45,6 +45,7 @@ docker run \
     -v /etc/letsencrypt:/etc/letsencrypt \
     hedger/certbot-dns-henet
 ```
+
 Alternatively, you can run the `certbot` command directly:
 
 ```bash

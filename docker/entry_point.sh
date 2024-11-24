@@ -32,12 +32,12 @@ check_and_set_env() {
 check_and_set_env
 
 # Setup cron schedule
-echo "$CRON_SCHEDULE root /usr/local/bin/certbot renew" > /tmp/certbot-cron
+echo "$CRON_SCHEDULE /usr/local/bin/certbot renew" > /tmp/certbot-cron
 crontab /tmp/certbot-cron
 rm /tmp/certbot-cron
 
-did_issue_cert=0
 
+did_issue_cert=0
 if [ -d "/etc/letsencrypt/live/" ]; then
     echo "Initial issue has already been completed"
     echo "Live certificates:"
