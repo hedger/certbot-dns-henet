@@ -10,10 +10,11 @@ check_and_set_env() {
     EMAIL=${EMAIL:-}
     CRON_SCHEDULE=${CRON_SCHEDULE:-28 6 */2 * *}
     DAEMON=${DAEMON:-}
-    CREDENTIALS_FILE=${CREDENTIALS_FILE:-/etc/letsencrypt/dns-credentials/henet.ini}
+    MUST_STAPLE=${MUST_STAPLE:-}
+    CREDENTIALS_FILE=${CREDENTIALS_FILE:-/run/dns-credentials/henet.ini}
 
     STAGING_PARAMETER=""
-    if [ -z "$STAGING" ]; then
+    if [ ! -z "$STAGING" ]; then
         STAGING_PARAMETER="--staging"
     fi
 
@@ -55,11 +56,17 @@ else
         email_arg="--email $EMAIL"
     fi
 
+    must_staple_arg=""
+    if [ -z $"MUST_STAPLE" ]; then
+        must_staple_arg="--must-staple"
+    fi
+
     certbot certonly \
         --non-interactive \
         -a dns-henet \
         --dns-henet-credentials ${CREDENTIALS_FILE} \
         $STAGING_PARAMETER \
+        $must_staple_arg \
         $email_arg \
         $domain_args \
         --agree-tos \

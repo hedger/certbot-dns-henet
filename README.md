@@ -35,14 +35,17 @@ certbot renew
 
 This repository also contains a Dockerfile that builds an image based on the official [certbot image](https://hub.docker.com/r/certbot/certbot/). The image is available on [Docker Hub](https://hub.docker.com/r/hedger/certbot-dns-henet/) and provides the `certbot` command with the `dns-henet` plugin pre-installed, as well as basic automation for renewing certificates.
 
+By default, the image runs in manual mode, for compatibility with the official image.
+
 To use the image in fully automated mode, run the following command:
 
 ```bash
-docker run \
+docker run --rm \
     -e DOMAINS="example.com *.example.com" \
     -e EMAIL="test@example.com" \
     -v $(pwd)/henet.ini:/run/dns-credentials/henet.ini \
     -v /etc/letsencrypt:/etc/letsencrypt \
+    --entrypoint "/certbot_he_auto_ep.sh" \
     hedger/certbot-dns-henet
 ```
 
@@ -70,8 +73,10 @@ docker run -it --rm \
  * `CRON_SCHEDULE`: should contain a cron schedule for renewing the certificate. Optional, default is `28 6 */2 * *`, which means once every other day.
  * `CREDENTIALS_FILE`: should contain the path to the credentials file in the container. Optional, default is `/run/dns-credentials/henet.ini`.
  * `STAGING`: if set to any value, the Let's Encrypt staging server will be used instead of the production server. Optional.
+ * `MUST_STAPLE`: if set to any value, the certificate will be generated with the [OCSP Must-Staple extension](https://scotthelme.co.uk/ocsp-must-staple/). Optional, default is not set.
  
  **Additionally, you must provide the `henet.ini` file with your dns.he.net credentials. The file should be mounted to `$CREDENTIALS_FILE` (`/run/dns-credentials/henet.ini` by default).**
+
 
  ### Liveness Status
 
@@ -86,6 +91,7 @@ services:
       EMAIL: "example@example.com"
       DAEMON: 1
       CREDENTIALS_FILE: /run/secrets/he-auth
+    entrypoint: /certbot_he_auto_ep.sh
     secrets:
       - he-auth
     ...
